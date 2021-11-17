@@ -1,0 +1,37 @@
+##
+## Build
+##
+
+FROM golang:1.16-buster AS build
+
+WORKDIR /app
+
+COPY go.mod .
+COPY go.sum .
+
+ENV GO111MODULE=on
+ENV GOPROXY=https://goproxy.cn,direct
+# ENV GOPRIORITY=.gitlab.com,.gitee.com
+# ENV GOSUMDB=sum.golang.google.cn
+
+RUN go mod download
+
+COPY *.go ./
+
+RUN go build -o /myweb
+
+##
+## Deploy
+##
+
+FROM gcr.io/distroless/base-debian10
+
+WORKDIR /
+
+COPY --from=build /myweb /myweb
+
+EXPOSE 8080
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/myweb"]
